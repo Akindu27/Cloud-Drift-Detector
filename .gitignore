@@ -1,0 +1,23 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+
+# Secrets — never commit these
+*.env
+.env
+secrets.json
+
+# Reports — generated files, not source
+reports/
+
+# OS
+.DS_Store
