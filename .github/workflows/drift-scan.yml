@@ -1,29 +1,10 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# .github/workflows/drift-scan.yml
-#
-# Runs the drift detector automatically:
-#   - Every 6 hours via cron schedule
-#   - On every push to main branch
-#   - Manually via GitHub Actions UI (workflow_dispatch)
-#
-# Required GitHub Secrets (set in repo Settings → Secrets → Actions):
-#   AWS_ACCESS_KEY_ID     — IAM user access key
-#   AWS_SECRET_ACCESS_KEY — IAM user secret key
-#   SLACK_WEBHOOK_URL     — Slack incoming webhook (optional)
-# ─────────────────────────────────────────────────────────────────────────────
-
 name: Cloud Drift Scan
 
 on:
-  # Run every 6 hours automatically
   schedule:
     - cron: "0 */6 * * *"
-
-  # Run on every push to main
   push:
     branches: [main]
-
-  # Allow manual trigger from GitHub Actions UI
   workflow_dispatch:
 
 jobs:
@@ -32,29 +13,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ── Step 1: Checkout code ──────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── Step 2: Set up Python ──────────────────────────────────────────────
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: "pip"
 
-      # ── Step 3: Install dependencies ───────────────────────────────────────
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # ── Step 4: Set up Terraform ───────────────────────────────────────────
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.15.5"
-
-      # ── Step 5: Configure AWS credentials ─────────────────────────────────
-      # Uses GitHub Secrets — never hardcoded in code
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -62,7 +32,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ap-southeast-1
 
-      # ── Step 6: Run drift scan ─────────────────────────────────────────────
       - name: Run drift scan
         env:
           AWS_REGION:        ap-southeast-1
@@ -72,8 +41,6 @@ jobs:
           LOG_LEVEL:         INFO
         run: python3 -m scanner.main
 
-      # ── Step 7: Upload HTML report as artifact ─────────────────────────────
-      # The report is downloadable from the GitHub Actions run page
       - name: Upload drift report
         uses: actions/upload-artifact@v4
         if: always()
@@ -81,11 +48,3 @@ jobs:
           name: drift-report-${{ github.run_number }}
           path: reports/
           retention-days: 30
-
-      # ── Step 8: Fail if critical drift found ──────────────────────────────
-      - name: Check for critical drift
-        if: steps.drift.outcome == 'failure'
-        run: |
-          echo "::error::Critical infrastructure drift detected!"
-          echo "Download the drift report artifact for details."
-          exit 1
