@@ -64,19 +64,13 @@ jobs:
 
       # ── Step 6: Run drift scan ─────────────────────────────────────────────
       - name: Run drift scan
-        id: drift
         env:
           AWS_REGION:        ap-southeast-1
           STATE_BACKEND:     local
           LOCAL_STATE_PATH:  terraform/terraform.tfstate
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           LOG_LEVEL:         INFO
-        # Exit code 1 = critical drift found → marks the workflow as failed
-        # This is intentional — drift should be visible in GitHub Actions UI
-        run: |
-          python3 -m scanner.main
-          echo "exit_code=$?" >> $GITHUB_OUTPUT
-        continue-on-error: true
+        run: python3 -m scanner.main
 
       # ── Step 7: Upload HTML report as artifact ─────────────────────────────
       # The report is downloadable from the GitHub Actions run page
