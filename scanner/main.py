@@ -126,8 +126,10 @@ def run_scan() -> int:
     try:
         tf_resources = get_terraform_resources()
     except FileNotFoundError as e:
-        logger.error(str(e))
-        return 1
+        logger.warning("No Terraform state file found — nothing to scan.")
+        logger.warning("Run 'terraform apply' to create infrastructure first.")
+        print("\n⚠ No state file found — skipping scan.\n")
+        return 0
 
     # ── Step 2: Scan live AWS resources ──────────────────────────────────────
     logger.info("Step 2/4: Scanning live AWS resources...")
